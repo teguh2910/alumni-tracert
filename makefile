@@ -2,9 +2,7 @@ init:
 	cd backend && go mod init tracert
 
 gen:
-	protoc --proto_path=proto proto/*.proto --go_out=plugins=grpc:./backend/proto
-	protoc --proto_path=proto proto/*.proto --js_out=import_style=commonjs:./mobile/src/proto --grpc-web_out=import_style=typescript,mode=grpcwebtext:./mobile/src/proto
-	protoc --proto_path=proto proto/*.proto --js_out=import_style=commonjs:./frontend/proto --grpc-web_out=import_style=commonjs,mode=grpcwebtext:./frontend/proto
+	protoc --proto_path=proto --go_out=./backend/proto --go-grpc_out=require_unimplemented_servers=false:./backend/proto --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative proto/*/*.proto
 
 deploy:
 	cd backend && CGO_ENABLED=0 GOOS=linux go build -o alumni server.go && docker build --tag=jackyhtg/alumni:$(TAG) . && docker push jackyhtg/alumni:$(TAG)
