@@ -14,3 +14,11 @@
 {"level":"error","msg":"login Prepare statement: Error 1045 (28000): Access denied for user '\"root'@'172.19.0.1' (using password: YES)","service":"-","time":"2023-07-09T15:34:37Z"}
 {"level":"error","msg":"login Prepare statement: Error 1045 (28000): Access denied for user '\"nativeuser'@'172.19.0.1' (using password: YES)","service":"-","time":"2023-07-09T15:40:44Z"}
 {"level":"error","msg":"login Prepare statement: Error 1045 (28000): Access denied for user '\"nativeuser'@'172.19.0.1' (using password: YES)","service":"-","time":"2023-07-09T15:41:58Z"}
+{"level":"error","msg":"login Prepare statement: Error 1045 (28000): Access denied for user '\"nativeuser'@'172.19.0.1' (using password: YES)","service":"-","time":"2023-07-09T15:43:19Z"}
+{"level":"error","msg":"login Prepare statement: Error 1045 (28000): Access denied for user '\"nativeuser'@'172.19.0.1' (using password: YES)","service":"-","time":"2023-07-09T15:43:20Z"}
+{"level":"error","msg":"login Prepare statement: Error 1045 (28000): Access denied for user '\"nativeuser'@'172.19.0.1' (using password: YES)","service":"-","time":"2023-07-09T15:43:20Z"}
+{"level":"error","msg":"login Prepare statement: Error 1045 (28000): Access denied for user '\"nativeuser'@'172.19.0.1' (using password: YES)","service":"-","time":"2023-07-09T15:43:20Z"}
+{"level":"error","msg":"login Prepare statement: Error 1045 (28000): Access denied for user '\"nativeuser'@'172.19.0.1' (using password: YES)","service":"-","time":"2023-07-09T15:43:21Z"}
+{"level":"error","msg":"login Prepare statement: Error 1045 (28000): Access denied for user '\"nativeuser'@'172.19.0.1' (using password: YES)","service":"-","time":"2023-07-09T15:43:21Z"}
+{"level":"error","msg":"login Prepare statement: Error 1045 (28000): Access denied for user '\"nativeuser'@'172.19.0.1' (using password: YES)","service":"-","time":"2023-07-09T15:43:21Z"}
+{"level":"error","msg":"login Prepare statement: Error 1045 (28000): Access denied for user '\"nativeuser'@'172.19.0.1' (using password: YES)","service":"-","time":"2023-07-09T15:43:21Z"}
