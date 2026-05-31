@@ -32,3 +32,7 @@ message Answer {
 message TracerList {
   repeated AlumniKuisioner answer = 1;
 }
+
+message UserAnswerList {
+  repeated UserAnswer answer = 1;
+}

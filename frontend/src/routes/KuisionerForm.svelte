@@ -21,7 +21,7 @@
       groups = [6];
     }
   })
-  const userAnswer = [];
+  let userAnswer = [];
   let tracerId = null;
   
   const questionGroupListInputProto = new QuestionGroupListInput()
@@ -53,6 +53,65 @@
     const tracerService = new UserAnswerService(deps, tracerProto)
 
     return await tracerService.tracer()
+  }
+
+  async function loadMyAnswers() {
+    try {
+      var deps = {
+        proto: {
+          TracertClient: TracertServicePromiseClient
+        }
+      }
+      const answerService = new UserAnswerService(deps, null)
+      const result = await answerService.getMyAnswers()
+      const answerList = result.getAnswerList()
+      if (answerList.length > 0) {
+        tracerId = answerList[0].getTracerId()
+        const loaded = [];
+        answerList.forEach(pb => {
+          const qId = pb.getQuestionId()
+          const rawAnswer = pb.getAnswer()
+          try {
+            const parsed = JSON.parse(rawAnswer)
+            if (Array.isArray(parsed)) {
+              loaded[qId] = parsed
+            } else {
+              let questionType = null;
+              questionList.getQuestionGroupList().forEach(group => {
+                group.getQuestionList().forEach(q => {
+                  if (q.getId() === qId) {
+                    questionType = q.getQuestionType()
+                  }
+                })
+              })
+              if (questionType === 2) {
+                let optionId = null;
+                questionList.getQuestionGroupList().forEach(group => {
+                  group.getQuestionList().forEach(q => {
+                    if (q.getId() === qId) {
+                      q.getQuestionOptionList().forEach(opt => {
+                        if (opt.getTitle() === parsed) {
+                          optionId = opt.getId()
+                        }
+                      })
+                    }
+                  })
+                })
+                loaded[qId] = { id: optionId !== null ? String(optionId) : parsed, text: parsed }
+              } else {
+                loaded[qId] = { id: parsed, text: parsed }
+              }
+            }
+          } catch(e) {
+            loaded[qId] = { id: rawAnswer, text: rawAnswer }
+          }
+        })
+        userAnswer = loaded;
+        console.log('Loaded existing answers:', userAnswer)
+      }
+    } catch(e) {
+      console.log('No existing answers to load:', e)
+    }
   }
 
   async function userAnswerCall(){
@@ -90,16 +149,37 @@
   onMount(async () => {
 		try {
       questionList = await questionListCall()
-      // let questionGroupList = questionList.getQuestionGroupList();
-      // console.log(`questionList`, questionGroupList)
-      // questionGroupList.forEach(group => {
-      //   console.log(`group`, group.getTitle())
-      // })
+      await loadMyAnswers()
+
+      // Check if user has already completed the questionnaire
+      // If they have answers for questions beyond group 1, they've completed it
+      if (userAnswer.length > 0) {
+        const hasAnswersForGroup2 = userAnswer[4] || userAnswer[5] || userAnswer[6]; // Questions 4,5,6 are in group 2
+        if (hasAnswersForGroup2) {
+          // User has already completed the questionnaire
+          notifications.success('Anda sudah mengisi kuisioner. Silakan lanjutkan ke upload ijazah.')
+          if (Cookies.get('usertype') == 2) {
+            navigate(PATH_URL.DASHBOARD, { replace: true })
+          } else {
+            navigate(PATH_URL.UPLOAD_IJAZAH, { replace: true })
+          }
+          return;
+        }
+
+        // If they only have answers for group 1, determine which group to show next
+        if (userAnswer[1] && userAnswer[1].id !== 5) {
+          const nextGroupId = parseInt(userAnswer[1].id)
+          if (!isNaN(nextGroupId)) {
+            groups = [(nextGroupId+1)]
+            questionList = await questionListCall()
+          }
+        }
+      }
     } catch(e) {
       errorServiceHandling(e)
       if (Cookies.get('token') == null) {
-        location = PATH_URL.LOGIN  
-      } 
+        location = PATH_URL.LOGIN
+      }
       notifications.danger(e.message)
     }
 	})
@@ -131,6 +211,7 @@
       // console.log(questionId, event.target.value)
       userAnswer[questionId] = answer
     }
+    userAnswer = userAnswer;
   }
 
   const validateAnswer = () => {
@@ -139,8 +220,13 @@
       group.getQuestionList().forEach(question => {
         console.log(question.getId(), userAnswer[question.getId()])
         if(!userAnswer[question.getId()]) {
+          console.log(`Missing answer for question ${question.getId()}: ${question.getTitle()}`)
           result = false
-        } 
+        } else if (Array.isArray(userAnswer[question.getId()]) && userAnswer[question.getId()].length === 0) {
+          // Check if it's an empty array (for multiple choice questions)
+          console.log(`Empty array answer for question ${question.getId()}: ${question.getTitle()}`)
+          result = false
+        }
       })
     })
     return result
@@ -155,8 +241,12 @@
       const answer = await userAnswerCall()
       if (groups.length === 1 && groups[0] === 1) {
         if (userAnswer[1].id !== 5) {
-          groups = [(parseInt(userAnswer[1].id)+1)]
-        } 
+          const nextGroupId = parseInt(userAnswer[1].id)
+          if (isNaN(nextGroupId)) {
+            throw { message: "jawaban tidak valid, silahkan ulangi" }
+          }
+          groups = [(nextGroupId+1)]
+        }
         questionList = await questionListCall()
       } else {
         if (Cookies.get('usertype') == 2) {
@@ -185,6 +275,16 @@
     }
 
     return flag;
+  }
+
+  const isCheckedCheckbox = (question, questionOption) => {
+    const answers = userAnswer[question.getId()]
+    return answers && answers.indexOf(questionOption.getTitle()) !== -1
+  }
+
+  const getTextValue = (question) => {
+    const answer = userAnswer[question.getId()]
+    return answer ? answer.text || '' : ''
   }
 
 </script>
@@ -221,7 +321,7 @@
                 <div class={question.getMinimumValue() && question.getMaximumValue() ? "flex justify-between mt-6 items-center" : "mt-2 space-y-4"}>
                   
                   {#if question.getQuestionType() === 1}
-                    <input on:change="{(event) => changeAnswer(event, question.getId(), event.target.value)}" type="text" name="first-name" id="first-name" autocomplete="given-name" class="block w-full px-4 py-2 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m">
+                    <input value={getTextValue(question)} on:change="{(event) => changeAnswer(event, question.getId(), event.target.value)}" type="text" name="first-name" id="first-name" autocomplete="given-name" class="block w-full px-4 py-2 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m">
                   {:else if  question.getQuestionType() === 2}
 
                     {#if question.getMinimumValue() && question.getMaximumValue() }
@@ -252,7 +352,7 @@
                     {#each question.getQuestionOptionList() as questionOption, i}
                       <div class="flex items-start">
                         <div class="flex items-center h-5">
-                          <input value={questionOption.getId()} on:change="{(event) => changeAnswer(event, question.getId(), questionOption.getTitle(), true)}" id={`check-${question.getId()}-${i}`} name={`check-${question.getId()}-${i}`} type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                          <input checked={isCheckedCheckbox(question, questionOption)} value={questionOption.getId()} on:change="{(event) => changeAnswer(event, question.getId(), questionOption.getTitle(), true)}" id={`check-${question.getId()}-${i}`} name={`check-${question.getId()}-${i}`} type="checkbox" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
                         </div>
                         <div class="ml-3 text-sm">
                           <label for={`check-${question.getId()}-${i}`} class="font-medium text-gray-700 cursor-pointer">{questionOption.getTitle()}</label>

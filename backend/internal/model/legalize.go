@@ -3,7 +3,6 @@ package model
 import (
 	"context"
 	"database/sql"
-	"os"
 	"strings"
 	"time"
 	"tracert/internal/constant"
@@ -214,15 +213,15 @@ func (u *Legalize) Get(ctx context.Context, db *sql.DB) error {
 	u.Pb.AlumniEmail = pbAlumni.Email
 	u.Pb.CertificateId = pbCertificate.Id
 	u.Pb.NoIjazah = pbCertificate.NoIjazah
-	u.Pb.Ijazah = "https://" + os.Getenv("OSS_BUCKET_DOCUMENT") + "." + os.Getenv("OSS_ENDPOINT") + "/" + u.Pb.Ijazah
-	u.Pb.Transcript = "https://" + os.Getenv("OSS_BUCKET_DOCUMENT") + "." + os.Getenv("OSS_ENDPOINT") + "/" + u.Pb.Transcript
+	u.Pb.Ijazah = "/uploads/" + u.Pb.Ijazah
+	u.Pb.Transcript = "/uploads/" + u.Pb.Transcript
 
 	if len(ijazahSigned.String) > 0 {
-		u.Pb.IjazahSigned = "https://" + os.Getenv("OSS_BUCKET_DOCUMENT") + "." + os.Getenv("OSS_ENDPOINT") + "/" + ijazahSigned.String
+		u.Pb.IjazahSigned = "/uploads/" + ijazahSigned.String
 	}
 
 	if len(transcriptSigned.String) > 0 {
-		u.Pb.TranscriptSigned = "https://" + os.Getenv("OSS_BUCKET_DOCUMENT") + "." + os.Getenv("OSS_ENDPOINT") + "/" + transcriptSigned.String
+		u.Pb.TranscriptSigned = "/uploads/" + transcriptSigned.String
 	}
 
 	u.Pb.RejectedReason = rejectedReason.String
@@ -296,10 +295,10 @@ func (u *Legalize) GetByAlumniId(ctx context.Context, db *sql.DB) (*proto.Certif
 		pbLegalize.ApprovedAt = approvedAt.String
 		pbLegalize.ApprovedBy = uint64(approvedBy.Int64)
 		if len(ijazahSigned.String) > 0 {
-			pbLegalize.IjazahSigned = "https://" + os.Getenv("OSS_BUCKET_DOCUMENT") + "." + os.Getenv("OSS_ENDPOINT") + "/" + ijazahSigned.String
+			pbLegalize.IjazahSigned = "/uploads/" + ijazahSigned.String
 		}
 		if len(transcriptSigned.String) > 0 {
-			pbLegalize.TranscriptSigned = "https://" + os.Getenv("OSS_BUCKET_DOCUMENT") + "." + os.Getenv("OSS_ENDPOINT") + "/" + transcriptSigned.String
+			pbLegalize.TranscriptSigned = "/uploads/" + transcriptSigned.String
 		}
 		pbLegalize.Rating = uint32(rating.Int32)
 		pbLegalize.RejectedReason = rejectedReason.String

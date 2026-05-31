@@ -14,6 +14,36 @@ type UserAnswer struct {
 	Pb proto.UserAnswer
 }
 
+func (u *UserAnswer) GetByTracerId(ctx context.Context, db *sql.DB, tracerId uint64) ([]*proto.UserAnswer, error) {
+	select {
+	case <-ctx.Done():
+		return nil, util.ContextError(ctx)
+	default:
+	}
+
+	query := `SELECT id, tracer_id, question_id, answer, created FROM user_answers WHERE tracer_id = ? ORDER BY question_id`
+	rows, err := db.QueryContext(ctx, query, tracerId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Query: %v", err)
+	}
+	defer rows.Close()
+
+	var answers []*proto.UserAnswer
+	for rows.Next() {
+		pb := proto.UserAnswer{}
+		err := rows.Scan(&pb.Id, &pb.TracerId, &pb.QuestionId, &pb.Answer, &pb.Created)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "Scan: %v", err)
+		}
+		answers = append(answers, &pb)
+	}
+	if rows.Err() != nil {
+		return nil, status.Errorf(codes.Internal, "Row: %v", err)
+	}
+
+	return answers, nil
+}
+
 func (u *UserAnswer) Create(ctx context.Context, db *sql.DB) error {
 	select {
 	case <-ctx.Done():
@@ -21,7 +51,8 @@ func (u *UserAnswer) Create(ctx context.Context, db *sql.DB) error {
 	default:
 	}
 
-	query := `INSERT INTO user_answers (tracer_id, question_id, answer) VALUES (?, ?, ?)`
+	query := `INSERT INTO user_answers (tracer_id, question_id, answer) VALUES (?, ?, ?)
+		ON DUPLICATE KEY UPDATE answer = VALUES(answer)`
 
 	stmt, err := db.PrepareContext(ctx, query)
 	if err != nil {

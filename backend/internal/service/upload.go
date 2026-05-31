@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 	"tracert/internal/model"
-	"tracert/internal/pkg/oss"
+	"tracert/internal/pkg/storage"
 
 	"github.com/gabriel-vasile/mimetype"
 )
@@ -75,7 +75,7 @@ func (u *Upload) UploadHandler(resp http.ResponseWriter, req *http.Request) {
 	tUnix := time.Now().Unix()
 	fileName := req.FormValue("module") + fmt.Sprintf("/%d-", tUnix) + strconv.Itoa(int(userModel.Pb.Id)) + "." + aFileType[1]
 
-	err = oss.UploadDocument(fileName, file)
+	err = storage.UploadDocument(fileName, file)
 	if err != nil {
 		resp.WriteHeader(http.StatusInternalServerError)
 		resp.Write([]byte(err.Error()))

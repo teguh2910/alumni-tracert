@@ -1,0 +1,7 @@
+.git
+.gitignore
+node_modules
+public/build
+*.md
+.env
+.env.*

@@ -15,6 +15,7 @@ import (
 	"tracert/internal/config"
 	"tracert/internal/pkg/db/mysql"
 	"tracert/internal/pkg/log/logruslog"
+	"tracert/internal/pkg/storage"
 	"tracert/internal/route"
 	"tracert/internal/service"
 )
@@ -36,6 +37,11 @@ func main() {
 	_, ok := os.LookupEnv("APP_ENV")
 	if !ok {
 		config.Setup(".env")
+	}
+
+	if err := storage.EnsureUploadDir(); err != nil {
+		log.Printf("error: creating upload dir: %s", err)
+		os.Exit(1)
 	}
 
 	if err := run(); err != nil {
@@ -100,6 +106,10 @@ func runWebServer(httpPort string, rpcServer *RpcServer, uploadService service.U
 		if grpc.IsGrpcWebRequest(req) || grpc.IsAcceptableGrpcCorsRequest(req) {
 			grpc.ServeHTTP(resp, req)
 		}
+	})
+
+	mux.HandleFunc("/uploads/", func(resp http.ResponseWriter, req *http.Request) {
+		http.ServeFile(resp, req, "/app/uploads/"+req.URL.Path[len("/uploads/"):])
 	})
 
 	mux.HandleFunc("/upload", func(resp http.ResponseWriter, req *http.Request) {

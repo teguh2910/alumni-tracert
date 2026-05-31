@@ -20,4 +20,17 @@ deploy-fe:
 frontend:
 	cd frontend && npm run dev
 
-.PHONY: init gen deploy server install-fe deploy-fe frontend
+# Docker commands
+docker-up:
+	docker-compose up -d --build
+
+docker-down:
+	docker-compose down
+
+docker-logs:
+	docker-compose logs -f
+
+docker-clean:
+	docker-compose down -v --rmi local
+
+.PHONY: init gen deploy server install-fe deploy-fe frontend docker-up docker-down docker-logs docker-clean

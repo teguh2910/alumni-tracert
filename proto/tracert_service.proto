@@ -55,4 +55,5 @@ service TracertService {
   rpc TracerCreate(Tracer) returns (Tracer) {}
   rpc GetTrace(EmptyMessage) returns (TracerList){}
   rpc GetLastTrace(EmptyMessage) returns (Tracer){}
+  rpc GetMyAnswers(EmptyMessage) returns (UserAnswerList){}
 }

@@ -80,6 +80,37 @@ func (u *AlumniTracertServer) TracerCreate(ctx context.Context, in *proto.Tracer
 	return &tracerModel.Pb, nil
 }
 
+func (u *AlumniTracertServer) GetMyAnswers(ctx context.Context, in *proto.EmptyMessage) (*proto.UserAnswerList, error) {
+	select {
+	case <-ctx.Done():
+		return nil, util.ContextError(ctx)
+	default:
+	}
+
+	ctx, err := GetUserLogin(ctx, u.Db)
+	if err != nil {
+		util.LogError(u.Log, "Get user login on get my answers", err)
+		return nil, err
+	}
+
+	var tracerModel model.Tracer
+	tracerModel.Pb.UserId = ctx.Value(app.Ctx("user_id")).(uint64)
+	err = tracerModel.GetLastByUserId(ctx, u.Db)
+	if err != nil {
+		util.LogError(u.Log, "Get last tracer by user", err)
+		return nil, err
+	}
+
+	var answerModel model.UserAnswer
+	answers, err := answerModel.GetByTracerId(ctx, u.Db, tracerModel.Pb.Id)
+	if err != nil {
+		util.LogError(u.Log, "Get answers by tracer", err)
+		return nil, err
+	}
+
+	return &proto.UserAnswerList{Answer: answers}, nil
+}
+
 func (u *AlumniTracertServer) GetTrace(ctx context.Context, in *proto.EmptyMessage) (*proto.TracerList, error) {
 	select {
 	case <-ctx.Done():
